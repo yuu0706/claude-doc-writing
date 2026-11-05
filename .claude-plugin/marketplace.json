@@ -1,0 +1,14 @@
+{
+  "name": "claude-doc-writing",
+  "description": "要件定義書・設計書・報告書など、人に読ませる業務資料の書き方",
+  "owner": {
+    "name": "yuu0706"
+  },
+  "plugins": [
+    {
+      "name": "doc-writing",
+      "source": "./plugins/doc-writing",
+      "description": "要件定義書・設計書・報告書など、人に読ませる業務資料の書き方"
+    }
+  ]
+}
