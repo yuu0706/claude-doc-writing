@@ -3,6 +3,7 @@
 
 使い方: deliverable-check.py <ファイル>... [--phrases <語句のファイル>] [--allow-dates] [--max-parens <数>]
   - コミット番号らしい16進の文字列、PR 番号、日付、括弧の多さ、手元の禁止の型を数える。
+  - 和文と半角英数の間の半角スペースを数える（`...` の中と URL は除く）。
   - --phrases には、利用者の発言のうち成果物に写してはならない語句を1行に1つ書いたファイルを渡す。
     見出し（# で始まる行・1行だけの短い行）に語句が残っていれば当たりにする。
   - --allow-dates は、取得日を書く資料（調査報告書など）で日付を当たりにしない。
@@ -21,6 +22,9 @@ PR_RE = re.compile(r"(?:PR|プルリクエスト)\s*#?\d+|pull/\d+")
 DATE_RE = re.compile(r"\d{4}[-/年]\d{1,2}[-/月]\d{1,2}日?")
 VERSION_LINE_RE = re.compile(r"初版|版|更新|作成日")
 PARENS_RE = re.compile(r"[（(]")
+JA = r"[ぁ-んァ-ヶー一-龠々]"
+SPACE_RE = re.compile(rf"(?<={JA}) +(?=[A-Za-z0-9])|(?<=[A-Za-z0-9]) +(?={JA})")
+SKIP_RE = re.compile(r"`[^`]*`|https?://\S+")
 LOCAL_PATTERNS = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"),
                               "claude-skills", "doc-writing.local-patterns.txt")
 
@@ -57,6 +61,9 @@ def check(path: str, phrases: list, local: list, allow_dates: bool, max_parens: 
         if not allow_dates and not VERSION_LINE_RE.search(line):
             for m in DATE_RE.finditer(line):
                 hits.append((no, "日付", m.group(0)))
+        plain = SKIP_RE.sub(lambda m: "\0" * len(m.group(0)), line)
+        for m in SPACE_RE.finditer(plain):
+            hits.append((no, "和文と英字の間の空白", line[max(0, m.start() - 6):m.end() + 6]))
         for pat in local:
             for m in re.finditer(pat, line):
                 hits.append((no, "手元の禁止の型", m.group(0)))
